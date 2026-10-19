@@ -1,4 +1,3 @@
-requests
-pandas
 flask
-twelvedata
+requests
+flask-cors
