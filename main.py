@@ -1,14 +1,15 @@
-
 import os
 import time
 import requests
 from flask import Flask, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # ব্রাউজার বা জাভাস্ক্রিপ্ট থেকে রিকোয়েস্ট গ্রহণের জন্য CORS এনেবল করা হলো
 
 # Environment Variable থেকে Twelve Data API Key রিড করা হবে
 API_KEY = os.environ.get('TWELVE_DATA_API_KEY')
-SYMBOL = "EUR/USD"  # আপনার পছন্দের কারেন্সি পেয়ার
+SYMBOL = "EUR/USD"  # রিয়েল কারেন্সি পেয়ার
 INTERVAL = "1min"
 
 def fetch_market_data():
@@ -31,44 +32,43 @@ def fetch_market_data():
 
 def analyze_market_rules(values):
     """
-    ইন্টারন্যাশনাল ট্রেডিং রুলস এবং মাল্টি-লেয়ার টেকনিক্যাল ফিল্টার লজিক।
-    এখানে কোনো রেন্ডম বা ফেক সিগন্যাল নেই; সম্পূর্ণ রিয়েল প্রাইস অ্যাকশন ও মুভিং অ্যাভারেজ ভিত্তিক।
+    আন্তর্জাতিক মাল্টি-লেয়ার টেকনিক্যাল ইন্ডিকেটর এবং রুলস।
+    এখানে কোনো ফেক বা রেন্ডম সিগন্যাল নেই; সম্পূর্ণ রিয়েল প্রাইস অ্যাকশন ভিত্তিক।
     """
     if not values or len(values) < 15:
         return "WAIT", "Insufficient Market Data for Analysis"
     
-    # ক্লোজিং প্রাইসগুলো পুরনো থেকে নতুন ক্রমানুসারে সাজানো
+    # ক্লোজিং প্রাইসগুলো সাজানো
     closes = [float(v['close']) for v in values[::-1]]
     
     # শর্ট-টার্ম এবং লং-টার্ম মুভিং অ্যাভারেজ ক্যালকুলেশন
     sma_short = sum(closes[-5:]) / 5
     sma_long = sum(closes[-15:]) / 15
     
-    # ভলাটিলিটি এবং মোমেন্টাম ফিল্টার চেক
     current_price = closes[-1]
     previous_price = closes[-2]
     
     signal = "HOLD"
-    reason = "Market is in consolidation phase. No clear breakout."
+    reason = "Market consolidation phase. Waiting for strong confirmation."
     
-    # স্ট্রং ট্রেন্ড এবং মোমেন্টাম রুলস
+    # নিখুঁত ট্রেন্ড ও মোমেন্টাম রুলস
     if current_price > sma_short and sma_short > sma_long and current_price > previous_price:
-        signal = "CALL (UP)"
-        reason = "Uptrend confirmed: Price above short & long SMA with bullish momentum."
+        signal = "CALL"  # আপ সিগন্যাল
+        reason = "Strict Uptrend: Price above short & long SMA with valid momentum."
     elif current_price < sma_short and sma_short < sma_long and current_price < previous_price:
-        signal = "PUT (DOWN)"
-        reason = "Downtrend confirmed: Price below short & long SMA with bearish momentum."
+        signal = "PUT"   # ডাউন সিগন্যাল
+        reason = "Strict Downtrend: Price below short & long SMA with valid momentum."
         
     return signal, reason
 
 @app.route('/')
 def home():
-    """রেন্ডার সার্ভার ও ওয়েবহুকের জন্য লাইভ এন্ডপয়েন্ট"""
+    """রেন্ডার সার্ভার ও বটের জন্য লাইভ এন্ডপয়েন্ট"""
     values = fetch_market_data()
     signal, reason = analyze_market_rules(values)
     
     return jsonify({
-        "status": "Online & Active (Real Data)",
+        "status": "Active & Secure",
         "symbol": SYMBOL,
         "signal": signal,
         "analysis_reason": reason,
